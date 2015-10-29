@@ -19,8 +19,8 @@ public class ShotLogger {
     
     
     // TODO: consider moving pools away from this class
-    protected static final ConcurrentLinkedQueue<LogItem> currentLogItemPool = new ConcurrentLinkedQueue<>();
-    protected static final ConcurrentLinkedQueue<LogItem> trashLogItemPool = new ConcurrentLinkedQueue<>();
+    protected static final ConcurrentLinkedQueue<LogItem> currentLogItemQueue = new ConcurrentLinkedQueue<>();
+    protected static final ConcurrentLinkedQueue<LogItem> trashLogItemQueue = new ConcurrentLinkedQueue<>();
     /* log items are recycled */
     protected static final int trashSizeLimit = 4096;
     
@@ -85,7 +85,7 @@ public class ShotLogger {
     }
     
     public String printPoolSizes() {
-        return (currentLogItemPool.size() + " / " + trashLogItemPool.size());
+        return (currentLogItemQueue.size() + " / " + trashLogItemQueue.size());
     }
     
 }

@@ -21,21 +21,21 @@ public class Log {
     
     public static void log(String category, short severity, String source, String message, Exception exception) {
         
-        LogItem reusable = ShotLogger.trashLogItemPool.poll();
+        LogItem reusable = ShotLogger.trashLogItemQueue.poll();
         
         if(reusable == null) {
             reusable = new LogItem();
         }
         
         reusable.set(category, severity, source, message, exception);
-        ShotLogger.currentLogItemPool.add(reusable);
+        ShotLogger.currentLogItemQueue.add(reusable);
     }
     
     
     protected static void trash(LogItem item) {
 
-        if(ShotLogger.trashLogItemPool.size() < ShotLogger.trashSizeLimit)
-            ShotLogger.trashLogItemPool.add(item);
+        if(ShotLogger.trashLogItemQueue.size() < ShotLogger.trashSizeLimit)
+            ShotLogger.trashLogItemQueue.add(item);
     }
     
     public static void printPoolSizes() {

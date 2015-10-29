@@ -23,7 +23,7 @@ public class LoggerWorker extends LoggerThread {
     public void execute() {
         
         // Get log item if any
-        currentItem = ShotLogger.currentLogItemPool.poll();
+        currentItem = ShotLogger.currentLogItemQueue.poll();
 
         if(currentItem != null) {
 
@@ -46,7 +46,7 @@ public class LoggerWorker extends LoggerThread {
                     }
 
                     // Get new item for next round if there is any left
-                    currentItem = ShotLogger.currentLogItemPool.poll();
+                    currentItem = ShotLogger.currentLogItemQueue.poll();
                 }
             } finally {
                 lock.unlock();
