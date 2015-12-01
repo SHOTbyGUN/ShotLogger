@@ -4,6 +4,7 @@
 package org.shotlogger.loglistener;
 
 import org.shotlogger.Log;
+import org.shotlogger.LogPrinter;
 import org.shotlogger.LogItem;
 
 
@@ -28,11 +29,8 @@ public class ConsoleLogListener implements LogListener {
         if(selectedLogLevel > logItem.severity)
             return;
         
-        if(selectedCategory == null) {
-            System.out.println(logItem.defaultStringBuilder(delimiter));
-        } else {
-            if(selectedCategory.equals(logItem.category))
-                System.out.println(logItem.defaultStringBuilder(delimiter));
+        if(selectedCategory == null || selectedCategory.equals(logItem.category)) {
+            System.out.println(LogPrinter.stringBuilder(logItem, delimiter, false, true, true));
         }
     }
 

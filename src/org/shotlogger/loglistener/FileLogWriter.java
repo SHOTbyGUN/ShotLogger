@@ -8,12 +8,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.shotlogger.Log;
+import org.shotlogger.LogPrinter;
 import org.shotlogger.LogItem;
 import org.shotlogger.LoggerThread;
+import org.shotlogger.ShotLogger;
+import org.shotlogger.ShotLoggerInternal;
 
 /**
  *
@@ -22,23 +24,24 @@ import org.shotlogger.LoggerThread;
 public class FileLogWriter extends LoggerThread implements LogListener {
     
     // Log file delimiter
-    private String logDeLimiter;
-    
-    // Reusable timestamp object
-    private Timestamp time = new Timestamp(System.currentTimeMillis());
+    private final String logDeLimiter;
     
     // Object used to write data to file
-    private String logDirectory;
-    private HashMap<String,FileLogHandle> handleMap;
+    private final String logDirectory;
+    private final HashMap<String,FileLogHandle> handleMap;
     
-    private String line;
+    private final FileLogHandle failSafeHandle;
 
     public FileLogWriter(int targetSleepTime, String logDirectory, String logDeLimiter) {
         super(targetSleepTime);
         this.logDirectory = logDirectory;
         this.logDeLimiter = logDeLimiter;
+        
+        // Create failsafe handle by default
+        failSafeHandle = createFileHandle("failsafe");
+        
         handleMap = new HashMap<>();
-        //initialize();
+        handleMap.put("failsafe", failSafeHandle);
     }
     
     @Override
@@ -59,12 +62,12 @@ public class FileLogWriter extends LoggerThread implements LogListener {
     }
     
     
-
+    /**
+     * @see this method is called from LoggerWorker
+     * @param logItem 
+     */
     @Override
     public void consume(LogItem logItem) {
-        
-        // Read timestamp
-        time.setTime(logItem.timestamp);
         
         // TODO: make logitem stringbuilder easily replaceable
         
@@ -72,15 +75,22 @@ public class FileLogWriter extends LoggerThread implements LogListener {
             handleMap.put(logItem.category, createFileHandle(logItem.category));
         
         // Write into to handle
-        handleMap.get(logItem.category).handleDataBuffer.add(time.toString() + logDeLimiter + logItem.fileLoggerStringBuilder(logDeLimiter));
+        handleMap.get(logItem.category).handleDataBuffer.add(LogPrinter.stringBuilder(logItem, logDeLimiter, true, false, true));
     }
+    
+    
+    public void failSafe(String text) {
+        if(failSafeHandle != null)
+            failSafeHandle.handleDataBuffer.add(text);
+    }
+    
 
     private FileLogHandle createFileHandle(String handleName) {
         try {
             FileLogHandle handle = new FileLogHandle(logDirectory, handleName);
             return handle;
         } catch (Exception ex) {
-            Log.log("shotlogger", Log.CRITICAL, getClass().getSimpleName(), "Unable to tap into log file: " + logDirectory, ex);
+            Log.log(ShotLoggerInternal.INTERNAL_ERROR_CATEGORY, Log.CRITICAL, getClass().getSimpleName(), "Unable to tap into log file: " + logDirectory, ex);
             return null;
         }
     }

@@ -4,7 +4,6 @@
  */
 package org.shotlogger;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  *
@@ -19,6 +18,14 @@ public class LogItem {
     public String message;
     public Exception exception;
     
+    /**
+     * @see timestamp is taken when set() is called
+     * @param category each category has its own logfile
+     * @param severity
+     * @param source suggestion: this.getClass().getSimpleName()
+     * @param message
+     * @param exception OPTIONAL, you can use null
+     */
     public void set(String category, short severity, String source, String message, Exception exception) {
         this.timestamp = System.currentTimeMillis();
         this.category = category;
@@ -26,80 +33,6 @@ public class LogItem {
         this.source = source;
         this.message = message;
         this.exception = exception;
-    }
-    
-    public String defaultStringBuilder(String delimiter) {
-        String textOut = "";
-        
-        if(category != null) {
-            textOut += category;
-            textOut += delimiter;
-        }
-        
-        if(severity >= 0 && severity <= Log.severityText.length) {
-            textOut += Log.severityText[severity];
-        } else {
-            textOut += "Unknown severity number: " + severity;
-        }
-        textOut += delimiter;
-        
-        if(source != null) {
-            textOut += source;
-            textOut += delimiter;
-        }
-        
-        if(message != null) {
-            textOut += message;
-            textOut += delimiter;
-        }
-        
-        if(exception != null) {
-            textOut += exception.toString();
-            textOut += delimiter;
-            textOut += ExceptionUtils.getStackTrace(exception);
-            textOut += delimiter;
-        }
-        
-        return textOut;
-    }
-    
-    public String fileLoggerStringBuilder(String delimiter) {
-        String textOut = "";
-        
-        /* 
-            removed category, because it is the filename
-        
-            if(category != null) {
-                textOut += category;
-                textOut += delimiter;
-            }
-        */
-        
-        if(severity >= 0 && severity <= Log.severityText.length) {
-            textOut += Log.severityText[severity];
-        } else {
-            textOut += "Unknown severity number: " + severity;
-        }
-        textOut += delimiter;
-        
-        if(source != null) {
-            textOut += source;
-            textOut += delimiter;
-        }
-        
-        if(message != null) {
-            textOut += message;
-            textOut += delimiter;
-        }
-        
-        if(exception != null) {
-            textOut += exception.toString();
-            textOut += delimiter;
-            textOut += ExceptionUtils.getStackTrace(exception);
-            textOut += delimiter;
-        }
-        
-        return textOut;
     }
     
 }
