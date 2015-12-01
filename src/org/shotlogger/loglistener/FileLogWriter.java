@@ -14,7 +14,6 @@ import org.shotlogger.Log;
 import org.shotlogger.LogPrinter;
 import org.shotlogger.LogItem;
 import org.shotlogger.LoggerThread;
-import org.shotlogger.ShotLogger;
 import org.shotlogger.ShotLoggerInternal;
 
 /**

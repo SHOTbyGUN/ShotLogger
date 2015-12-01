@@ -1,9 +1,6 @@
 package org.shotlogger.example;
 
-
-
 import java.util.Scanner;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.shotlogger.Log;
 import org.shotlogger.ShotLogger;
 
@@ -13,12 +10,25 @@ import org.shotlogger.ShotLogger;
  */
 public class Tester {
     
+    private static int rsgCounter = 0;
+    
     public static void main(String[] args) {
         
-        Log.log("tester", Log.DEBUG, Tester.class.getSimpleName(), "logger tester pre init message", null);
+        /*
+            Testing exceptions before initializing ShotLogger
+        */
+        
+        Log.info("tester", Tester.class.getSimpleName(), "logger pre init message", null);
+        
+        try {
+            throw new Exception("a wild exception appears!");
+        } catch (Exception ex) {
+            Log.info("tester", "main", "exception format test", ex);
+        }
+        
         
         ShotLogger shotLogger = ShotLogger.getShotLogger();
-        shotLogger.startBasic("/home/shotbygun/dev/shotlog/log");
+        shotLogger.startBasic("/raid/shotbygun/temp/log");
         
         long startTime, endTime;
         
@@ -26,74 +36,75 @@ public class Tester {
             
             startTime = System.currentTimeMillis();
             
-            Log.log("tester", Log.INFO, Tester.class.getSimpleName(), "logger tester message 1", null);
+            Log.info("tester", Tester.class.getSimpleName(), "logger after init message", null);
             
             // Wait logger to settle
-            //Thread.sleep(1000);
+            Thread.sleep(1000);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             trashSpeedTest(1);
             
             //Thread.sleep(1000);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             trashSpeedTest(1);
             
             //Thread.sleep(1000);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             trashSpeedTest(2);
             
             //Thread.sleep(1000);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             trashSpeedTest(3);
             
             //Thread.sleep(1000);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             trashSpeedTest(4);
             
             //Thread.sleep(1000);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             trashSpeedTest(5);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             
             //Thread.sleep(1000);
             
-            Log.printPoolSizes();
+            shotLogger.printPoolSizes();
             
             Thread.sleep(1000);
             
-            Log.printPoolSizes();
-
-
-
-            //consoleTrap();
+            shotLogger.printPoolSizes();
+            
             
             endTime = System.currentTimeMillis();
+            System.out.println("shit generation time:" + (endTime - startTime));
+            Log.info("tester", null, "shit generation done", null);
             
+            Thread.sleep(1000);
+            
+            endTime = System.currentTimeMillis();
             System.out.println("total time:" + (endTime - startTime));
-            
             // Finally stop the logger
             
             
         } catch (Exception ex) {
             // if tester fails, print exception traditionally
             System.out.println("tester error");
-            ExceptionUtils.printRootCauseStackTrace(ex);
+            ex.printStackTrace();
         } finally {
             // Shut down logger
             // they are NOT daemons
-            shotLogger.stop();
+            shotLogger.stopAndWait();
         }
     }
     
     public static void trashSpeedTest(int numThreads) {
         
-        //Log.log("tester", Log.ERROR, Tester.class.getSimpleName(), "starting RandomShitGenerators", null);
+        //shotLogger.log("tester", shotLogger.ERROR, Tester.class.getSimpleName(), "starting RandomShitGenerators", null);
         System.out.println("test with " + numThreads + " workers");
         
         long startTime, endTime, deltaTime;
@@ -101,7 +112,7 @@ public class Tester {
         startTime = System.currentTimeMillis();
         
         for(int i = 1 ; i < numThreads; i++) {
-            RandomShitGenerator rsg = new RandomShitGenerator("RSG-" + i, 100000, 10);
+            RandomShitGenerator rsg = new RandomShitGenerator("RSG-" + rsgCounter++, 100000, 10);
             rsg.start();
         }
         
@@ -110,7 +121,7 @@ public class Tester {
         
         endTime = System.currentTimeMillis();
         deltaTime = endTime - startTime;
-        System.out.println("first test: " + deltaTime + " milliseconds");
+        System.out.println("RSG-main generation: " + deltaTime + " milliseconds");
     }
     
     
@@ -126,7 +137,7 @@ public class Tester {
                 quit = true;
             } else {
                 Log.log("system.in", Log.INFO, Tester.class.getSimpleName(), input, null);
-                Log.printPoolSizes();
+                ShotLogger.getShotLogger().printPoolSizes();
             }
 
         }
