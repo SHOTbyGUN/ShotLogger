@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.shotlogger;
 
 /**
@@ -13,9 +8,6 @@ public abstract class LoggerThread implements Runnable {
 
     private boolean keepRunning = false;
     private Thread thread;
-    
-    // sleep is not super accurate, add some margin
-    private static final int errorMargin = 5;
     
     private final long targetSleepTime; // sleep time in milliseconds. eg 1000 = 1 second
     private long lastLoopTime = System.currentTimeMillis();
@@ -51,6 +43,9 @@ public abstract class LoggerThread implements Runnable {
     
     protected void doSleep() throws Exception {
         
+        if(targetSleepTime == 0)
+            return;
+        
         currentTime = System.currentTimeMillis();
         sleepTime = targetSleepTime - (currentTime - lastLoopTime);
         lastLoopTime = currentTime;
@@ -58,13 +53,9 @@ public abstract class LoggerThread implements Runnable {
         // no time to sleep!
         if(sleepTime < 0)
             return;
-        
-        if(sleepTime < errorMargin * 2)
-            Thread.yield();
-        else
-            Thread.sleep(sleepTime - errorMargin);
 
         
+        Thread.sleep(sleepTime);
     }
     
     public final void stop() {
@@ -80,5 +71,9 @@ public abstract class LoggerThread implements Runnable {
     }
     
     public abstract void tryClosing();
+    
+    protected Thread getThread() {
+        return thread;
+    }
     
 }

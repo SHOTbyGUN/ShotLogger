@@ -14,44 +14,11 @@ public class LoggerWorker extends LoggerThread {
     private LogItem currentItem;
     private final ArrayList<LogListener> listeners = new ArrayList<>();
     private final Lock lock = new ReentrantLock(); // Lock used to cover ArrayList
+    
+    private ArrayQueue jobList;
 
-    public LoggerWorker(int targetSleepTime) {
-        super(targetSleepTime);
-    }
-
-    @Override
-    public void execute() {
-        
-        // Get log item if any
-        currentItem = ShotLogger.currentLogItemQueue.poll();
-
-        if(currentItem != null) {
-
-            // Lock the listener list so we dont get interrupted
-            lock.lock();
-
-            try {
-
-                while(currentItem != null) {
-
-                    try {
-                        for (LogListener listener : listeners) {
-                            listener.consume(currentItem);
-                        }
-
-                    } catch (Exception ex) {
-                        Log.log("LOGGER", Log.ERROR, getClass().getSimpleName(), "error on logger tick", ex);
-                    } finally {
-                        Log.trash(currentItem);
-                    }
-
-                    // Get new item for next round if there is any left
-                    currentItem = ShotLogger.currentLogItemQueue.poll();
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
+    public LoggerWorker() {
+        super(0);
     }
     
     public void addListener(LogListener logListener) {
@@ -81,8 +48,46 @@ public class LoggerWorker extends LoggerThread {
     }
 
     @Override
+    public void execute() {
+
+        try {
+
+            jobList = ShotLogger.currentLogItemQueue.swap();
+
+            while(true) {
+
+                // Get an item from empty
+                currentItem = jobList.pull();
+
+                // if null, the queue is empty
+                if(currentItem == null)
+                    break;
+
+                // Process the item
+                try {
+                    for (LogListener listener : listeners) {
+                        listener.consume(currentItem);
+                    }
+                } catch (Exception ex) {
+                    Log.failSafe(ShotLoggerInternal.INTERNAL_ERROR_CATEGORY, Log.CRITICAL, this.getClass().getSimpleName(), "error 1", ex);
+                } finally {
+                    //ShotLogger.trashLogItemQueue.offer(currentItem);
+                }
+            }
+
+            // Implement sleeping mechanism here!
+            //ShotLogger.currentLogItemQueue.wait(100);
+            Thread.sleep(1);
+            
+        } catch (Exception ex) {
+            Log.failSafe(ShotLoggerInternal.INTERNAL_ERROR_CATEGORY, Log.CRITICAL, this.getClass().getSimpleName(), "error 2", ex);
+        }
+        
+    }
+
+    @Override
     public void tryClosing() {
-        // uhh? what do?
+        
     }
     
     

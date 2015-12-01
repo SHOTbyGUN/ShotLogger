@@ -7,7 +7,6 @@
 package org.shotlogger;
 
 import java.io.File;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import org.shotlogger.loglistener.ConsoleLogListener;
 import org.shotlogger.loglistener.FileLogWriter;
 
@@ -16,23 +15,24 @@ import org.shotlogger.loglistener.FileLogWriter;
  * @author shotbygun
  */
 public class ShotLogger {
+        
+    // Main pool of LogItems
+    protected static final ArraySwapper currentLogItemQueue = new ArraySwapper(4096);
     
+    // Trash pool
+    //protected static final TryDeque<LogItem> trashLogItemQueue = new TryDeque<>(1024);
     
-    // TODO: consider moving pools away from this class
-    protected static final ConcurrentLinkedQueue<LogItem> currentLogItemQueue = new ConcurrentLinkedQueue<>();
-    protected static final ConcurrentLinkedQueue<LogItem> trashLogItemQueue = new ConcurrentLinkedQueue<>();
-    /* log items are recycled */
-    protected static final int trashSizeLimit = 4096;
-    
+    // Singleton
     private static ShotLogger shotLogger;
     
+    // Default systems
     private LoggerWorker loggerWorker;
     private ConsoleLogListener consoleLog;
     private FileLogWriter fileLog;
     
     
     private ShotLogger() {
-        // Create this class only with getShotLogger = prevent multiple instances
+        // Create this class only with getShotLogger
     }
     
     public static ShotLogger getShotLogger() {
@@ -43,10 +43,14 @@ public class ShotLogger {
         return shotLogger;
     }
     
+    /**
+     * 
+     * @param logDirectoryPath this is log DIRECTORY, not logfile. Category = filename + .log inside the given log DIRECTORY
+     */
     public void startBasic(String logDirectoryPath) {
         
         // Create loggerWorker
-        loggerWorker = new LoggerWorker(50);
+        loggerWorker = new LoggerWorker();
         
         // Create listeners
         consoleLog = new ConsoleLogListener(" ");
@@ -55,13 +59,16 @@ public class ShotLogger {
         // Start
         loggerWorker.addListener(fileLog);
         loggerWorker.addListener(consoleLog);
-        loggerWorker.start("shotlogger");
+        loggerWorker.start("LoggerWorker");
         fileLog.start("FileShotLogger");
     }
+
     
     public void stop() {
-        fileLog.stop();
+        
         loggerWorker.stop();
+        fileLog.stop();
+        
     }
     
     private String getOrCreateDirectory(String directoryPath) {
@@ -84,8 +91,46 @@ public class ShotLogger {
         }
     }
     
-    public String printPoolSizes() {
-        return (currentLogItemQueue.size() + " / " + trashLogItemQueue.size());
+    public void printPoolSizes() {
+        
+        int[] sizes = currentLogItemQueue.size();
+        
+        System.out.println(sizes[0] + "/" + sizes[1] + " trash: " + 0);
+    }
+    
+    public void stopAndWait() {
+        try {
+            
+            System.out.println("waiting for loggerWorker to stop");
+            loggerWorker.stop();
+            loggerWorker.getThread().join();
+            
+            System.out.println("waiting for fileLog to stop");
+            fileLog.stop();
+            fileLog.getThread().join();
+            
+            System.out.println("logger stopped");
+            
+        } catch (Exception ex) {
+            System.out.println("stopAndWait() @ " + ShotLogger.class.getSimpleName() + " " + ex.toString());
+            ex.printStackTrace();
+            
+            // if exception, try to make sure they were asked to stop
+            loggerWorker.stop();
+            fileLog.stop();
+        }
+    }
+
+    public LoggerWorker getLoggerWorker() {
+        return loggerWorker;
+    }
+
+    public ConsoleLogListener getConsoleLog() {
+        return consoleLog;
+    }
+
+    public FileLogWriter getFileLog() {
+        return fileLog;
     }
     
 }
