@@ -71,8 +71,12 @@ public class Log {
         String errorLine = LogPrinter.stringBuilder(logItem, FAILSAFEDELIMITER, true, true, true);
         
         // Output the error
-        System.err.println(errorLine);
-        System.out.println(errorLine);
+        if(logItem.severity < Log.ERROR)
+            System.out.println(errorLine);
+        else
+        
+            System.err.println(errorLine);
+        
     }
     
     

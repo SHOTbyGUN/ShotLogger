@@ -71,10 +71,7 @@ public class ShotLogger {
 
     
     public void stop() {
-        
         loggerWorker.stop();
-        fileLog.stop();
-        
     }
     
     private String getOrCreateDirectory(String directoryPath) {
@@ -104,19 +101,14 @@ public class ShotLogger {
             loggerWorker.stop();
             loggerWorker.getThread().join();
             
-            System.out.println("waiting for fileLog to stop");
-            fileLog.stop();
-            fileLog.getThread().join();
-            
-            System.out.println("logger stopped");
             
         } catch (Exception ex) {
             System.out.println("stopAndWait() @ " + ShotLogger.class.getSimpleName() + " " + ex.toString());
             ex.printStackTrace();
             
             // if exception, try to make sure they were asked to stop
-            loggerWorker.stop();
-            fileLog.stop();
+            //loggerWorker.stop();
+            //fileLog.stop();
         }
     }
 

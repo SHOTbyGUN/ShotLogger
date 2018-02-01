@@ -95,7 +95,33 @@ public class LoggerWorker extends LoggerThread {
 
     @Override
     public void tryClosing() {
-        
+        for(LogListener listener : listeners) {
+            listener.stop();
+            if(listener instanceof LoggerThread) {
+                
+                Thread thread = ((LoggerThread) listener).getThread();
+                Log.failSafe("shotlogger", 
+                            Log.INFO, 
+                            LoggerWorker.class.getCanonicalName(), 
+                            "waiting thread: " + thread.getName() + " to close", 
+                            null);
+                
+                try {
+                    thread.join();
+                    Log.failSafe("shotlogger", 
+                            Log.INFO, 
+                            LoggerWorker.class.getCanonicalName(), 
+                            "thread: " + thread.getName() + " stopped", 
+                            null);
+                } catch (InterruptedException ex) {
+                    Log.failSafe("shotlogger", 
+                            Log.ERROR, 
+                            LoggerWorker.class.getCanonicalName(), 
+                            "error while waiting thread: " + thread.getName() + " to close", 
+                            ex);
+                }
+            }
+        }
     }
     
 }
