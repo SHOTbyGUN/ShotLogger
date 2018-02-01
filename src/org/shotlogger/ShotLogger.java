@@ -53,7 +53,7 @@ public class ShotLogger {
      */
     public void startBasic(String logDirectoryPath) {
         
-        setLoggerStrategy(new NThreadedStrategy(null));
+        setLoggerStrategy(new SimpleLoggerStrategy(null));
         
         // Create loggerWorker
         loggerWorker = new LoggerWorker();
