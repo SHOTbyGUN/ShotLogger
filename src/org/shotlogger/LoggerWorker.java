@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.shotlogger.loglistener.LogListener;
+import com.shotbygun.collections.ArrayQueue;
+import com.shotbygun.collections.ArraySwapper;
 
 /**
  *
@@ -15,7 +17,7 @@ public class LoggerWorker extends LoggerThread {
     private final ArrayList<LogListener> listeners = new ArrayList<>();
     private final Lock lock = new ReentrantLock(); // Lock used to cover ArrayList
     
-    private ArrayQueue jobList;
+    private ArrayQueue<LogItem> jobList;
 
     public LoggerWorker() {
         super(0);
@@ -52,32 +54,38 @@ public class LoggerWorker extends LoggerThread {
 
         try {
 
-            jobList = ShotLogger.currentLogItemQueue.swap();
+            
+            for(ArraySwapper<LogItem> arraySwapper : ShotLogger.getLoggerStrategy().getAllSwappers()) {
+                
+                jobList = arraySwapper.swap();
 
-            while(true) {
+                while(true) {
 
-                // Get an item from empty
-                currentItem = jobList.pull();
+                    // Get an item from empty
+                    currentItem = jobList.pull();
 
-                // if null, the queue is empty
-                if(currentItem == null)
-                    break;
+                    // if null, the queue is empty
+                    if(currentItem == null)
+                        break;
 
-                // Process the item
-                try {
-                    for (LogListener listener : listeners) {
-                        listener.consume(currentItem);
+                    // Process the item
+                    try {
+                        for (LogListener listener : listeners) {
+                            listener.consume(currentItem);
+                        }
+                    } catch (Exception ex) {
+                        Log.failSafe(ShotLoggerInternal.INTERNAL_ERROR_CATEGORY, Log.CRITICAL, this.getClass().getSimpleName(), "error 1", ex);
+                    } finally {
+                        //ShotLogger.trashLogItemQueue.offer(currentItem);
                     }
-                } catch (Exception ex) {
-                    Log.failSafe(ShotLoggerInternal.INTERNAL_ERROR_CATEGORY, Log.CRITICAL, this.getClass().getSimpleName(), "error 1", ex);
-                } finally {
-                    //ShotLogger.trashLogItemQueue.offer(currentItem);
                 }
             }
+            
+            //DEBUG
+            //trimLogItemPool();
 
-            // Implement sleeping mechanism here!
-            //ShotLogger.currentLogItemQueue.wait(100);
-            Thread.sleep(1);
+            // Sleeping mechanism in LoggerThread
+            //Thread.sleep(1);
             
         } catch (Exception ex) {
             Log.failSafe(ShotLoggerInternal.INTERNAL_ERROR_CATEGORY, Log.CRITICAL, this.getClass().getSimpleName(), "error 2", ex);
@@ -89,7 +97,5 @@ public class LoggerWorker extends LoggerThread {
     public void tryClosing() {
         
     }
-    
-    
     
 }

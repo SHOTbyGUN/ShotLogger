@@ -4,12 +4,13 @@
  */
 package org.shotlogger.loglistener;
 
+import com.shotbygun.collections.ArrayQueue;
+import com.shotbygun.collections.ArraySwapper;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import org.shotlogger.Log;
 import org.shotlogger.LogPrinter;
 import org.shotlogger.LogItem;
@@ -23,24 +24,18 @@ import org.shotlogger.ShotLoggerInternal;
 public class FileLogWriter extends LoggerThread implements LogListener {
     
     // Log file delimiter
-    private final String logDeLimiter;
+    private String logDeLimiter;
     
     // Object used to write data to file
     private final String logDirectory;
     private final HashMap<String,FileLogHandle> handleMap;
-    
-    private final FileLogHandle failSafeHandle;
 
     public FileLogWriter(int targetSleepTime, String logDirectory, String logDeLimiter) {
         super(targetSleepTime);
         this.logDirectory = logDirectory;
         this.logDeLimiter = logDeLimiter;
         
-        // Create failsafe handle by default
-        failSafeHandle = createFileHandle("failsafe");
-        
         handleMap = new HashMap<>();
-        handleMap.put("failsafe", failSafeHandle);
     }
     
     @Override
@@ -51,7 +46,7 @@ public class FileLogWriter extends LoggerThread implements LogListener {
     }
 
     @Override
-    public void tryClosing() {
+    protected void tryClosing() {
         
         for(FileLogHandle handle : handleMap.values()) {
             handle.close();
@@ -70,23 +65,19 @@ public class FileLogWriter extends LoggerThread implements LogListener {
         
         // TODO: make logitem stringbuilder easily replaceable
         
-        if(!handleMap.containsKey(logItem.category))
-            handleMap.put(logItem.category, createFileHandle(logItem.category));
+        // Get or Make file handle
+        if(!handleMap.containsKey(logItem.threadName))
+            handleMap.put(logItem.threadName, createFileHandle(logItem.threadName));
         
         // Write into to handle
-        handleMap.get(logItem.category).handleDataBuffer.add(LogPrinter.stringBuilder(logItem, logDeLimiter, true, false, true));
+        FileLogHandle handle = handleMap.get(logItem.threadName);
+        handle.handleLogItems.put(LogPrinter.stringBuilder(logItem, logDeLimiter, true, false, true));
+        //handleMap.get(logItem.category).handleLogItems.put(LogPrinter.stringBuilder(logItem, logDeLimiter, true, false, true));
     }
-    
-    
-    public void failSafe(String text) {
-        if(failSafeHandle != null)
-            failSafeHandle.handleDataBuffer.add(text);
-    }
-    
 
     private FileLogHandle createFileHandle(String handleName) {
         try {
-            FileLogHandle handle = new FileLogHandle(logDirectory, handleName);
+            FileLogHandle handle = new FileLogHandle(logDirectory, handleName, logDeLimiter, notifyObject);
             return handle;
         } catch (Exception ex) {
             Log.log(ShotLoggerInternal.INTERNAL_ERROR_CATEGORY, Log.CRITICAL, getClass().getSimpleName(), "Unable to tap into log file: " + logDirectory, ex);
@@ -99,31 +90,38 @@ public class FileLogWriter extends LoggerThread implements LogListener {
 
 class FileLogHandle {
     
+    
     final String handleName;
     final PrintWriter handleWriter;
     // This queue holds string data waiting to get written to disk
-    final ConcurrentLinkedQueue<String> handleDataBuffer;
+    final ArraySwapper<String> handleLogItems;
+    final String logDeLimiter;
     
-    // Temp variables
-    String line;
-    
-    protected FileLogHandle(String logDirectory, String handleName) throws Exception {
+    protected FileLogHandle(String logDirectory, String handleName, String logDeLimiter, Object notifyObject) throws Exception {
         this.handleName = handleName;
         this.handleWriter = new PrintWriter(new BufferedWriter(new FileWriter(logDirectory + File.separatorChar + handleName + ".log", true)));
-        handleDataBuffer = new ConcurrentLinkedQueue<>();
+        this.handleLogItems = new ArraySwapper<>(String.class, 1024*16, notifyObject);
+        this.logDeLimiter = logDeLimiter;
     }
     
     protected void writeAndFlush() {
-        line = handleDataBuffer.poll();
-        while(line != null) {
+        
+        String line;
+        ArrayQueue<String> queue = handleLogItems.swap();
+        
+        while(true) {
+            line = queue.pull();
+            
+            if(line == null)
+                break;
+            
             handleWriter.println(line);
-            line = handleDataBuffer.poll();
         }
+        
         handleWriter.flush();
     }
     
     protected void close() {
         handleWriter.close();
-        handleDataBuffer.clear();
     }
 }

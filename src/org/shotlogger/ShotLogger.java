@@ -9,6 +9,9 @@ package org.shotlogger;
 import java.io.File;
 import org.shotlogger.loglistener.ConsoleLogListener;
 import org.shotlogger.loglistener.FileLogWriter;
+import org.shotlogger.strategy.NThreadedStrategy;
+import org.shotlogger.strategy.ShotLoggerStrategy;
+import org.shotlogger.strategy.SimpleLoggerStrategy;
 
 /**
  *
@@ -17,7 +20,8 @@ import org.shotlogger.loglistener.FileLogWriter;
 public class ShotLogger {
         
     // Main pool of LogItems
-    protected static final ArraySwapper currentLogItemQueue = new ArraySwapper(4096);
+    //protected static final ArraySwapper currentLogItemQueue = new ArraySwapper(4096);
+    private static ShotLoggerStrategy SHOTLOGGERSTRATEGY;
     
     // Trash pool
     //protected static final TryDeque<LogItem> trashLogItemQueue = new TryDeque<>(1024);
@@ -49,12 +53,14 @@ public class ShotLogger {
      */
     public void startBasic(String logDirectoryPath) {
         
+        setLoggerStrategy(new NThreadedStrategy(null));
+        
         // Create loggerWorker
         loggerWorker = new LoggerWorker();
         
         // Create listeners
         consoleLog = new ConsoleLogListener(" ");
-        fileLog = new FileLogWriter(1000, getOrCreateDirectory(logDirectoryPath), ";");
+        fileLog = new FileLogWriter(100, getOrCreateDirectory(logDirectoryPath), ";");
         
         // Start
         loggerWorker.addListener(fileLog);
@@ -91,13 +97,6 @@ public class ShotLogger {
         }
     }
     
-    public void printPoolSizes() {
-        
-        int[] sizes = currentLogItemQueue.size();
-        
-        System.out.println(sizes[0] + "/" + sizes[1] + " trash: " + 0);
-    }
-    
     public void stopAndWait() {
         try {
             
@@ -131,6 +130,25 @@ public class ShotLogger {
 
     public FileLogWriter getFileLog() {
         return fileLog;
+    }
+    
+    public static void put(LogItem logItem) {
+        if(SHOTLOGGERSTRATEGY == null)
+            System.out.println("pre init logmessage! " + LogPrinter.stringBuilder(logItem, " ", true, true, true));
+        else
+            SHOTLOGGERSTRATEGY.getCurrentLogItemSwapper().put(logItem);
+    }
+    
+    public static void setLoggerStrategy(ShotLoggerStrategy shotLoggerStrategy) {
+        SHOTLOGGERSTRATEGY = shotLoggerStrategy;
+    }
+    
+    public static ShotLoggerStrategy getLoggerStrategy() {
+        return SHOTLOGGERSTRATEGY;
+    }
+    
+    public int getSize() {
+        return SHOTLOGGERSTRATEGY.getSize();
     }
     
 }

@@ -8,13 +8,13 @@ import org.shotlogger.Log;
  */
 public class RandomShitGenerator implements Runnable {
 
-    int loops, sleep, i;
+    int loops, i;
     String name;
+    Thread thread;
 
-    public RandomShitGenerator(String name, int loops, int sleep) {
+    public RandomShitGenerator(String name, int loops) {
         this.name = name;
         this.loops = loops;
-        this.sleep = sleep;
         i = 0;
     }
 
@@ -27,15 +27,14 @@ public class RandomShitGenerator implements Runnable {
         while(i++ < loops) {
 
             try {
-                //Thread.sleep(sleep);
 
                 try {
                     //randomText = RandomStringUtils.random(100, true, true);
-                    randomText = Long.toHexString(System.currentTimeMillis());
+                    randomText = Long.toHexString(System.currentTimeMillis()+i);
 
                     throw new Exception(randomText);
                 } catch (Exception ex) {
-                    Log.log("testerRandomData", Log.DEBUG, getClass().getSimpleName(), "test", ex);
+                    Log.log("testerRandomData", Log.DEBUG, getClass().getSimpleName(), name, ex);
                 }
 
             } catch (Exception uex) {
@@ -48,7 +47,7 @@ public class RandomShitGenerator implements Runnable {
     }
 
     public void start() {
-        Thread thread = new Thread(this);
+        thread = new Thread(this);
         thread.setPriority(3);
         thread.setName(name);
         thread.setDaemon(true);

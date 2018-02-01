@@ -8,6 +8,7 @@ public abstract class LoggerThread implements Runnable {
 
     private boolean keepRunning = false;
     private Thread thread;
+    public Object notifyObject = new Object();
     
     private final long targetSleepTime; // sleep time in milliseconds. eg 1000 = 1 second
     private long lastLoopTime = System.currentTimeMillis();
@@ -54,8 +55,11 @@ public abstract class LoggerThread implements Runnable {
         if(sleepTime < 0)
             return;
 
+        synchronized(notifyObject) {
+            notifyObject.wait(targetSleepTime);
+        }
         
-        Thread.sleep(sleepTime);
+        //Thread.sleep(sleepTime);
     }
     
     public final void stop() {
@@ -70,7 +74,7 @@ public abstract class LoggerThread implements Runnable {
         thread.start();
     }
     
-    public abstract void tryClosing();
+    protected abstract void tryClosing();
     
     protected Thread getThread() {
         return thread;

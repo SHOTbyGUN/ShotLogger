@@ -58,6 +58,11 @@ public class ConsoleLogListener implements LogListener {
         this.selectedLogLevel = selectedLogLevel;
     }
     
+    @Override
+    public void stop() {
+        
+    }
+
     
-    
+     
 }

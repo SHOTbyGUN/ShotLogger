@@ -28,7 +28,7 @@ public class Tester {
         
         
         ShotLogger shotLogger = ShotLogger.getShotLogger();
-        shotLogger.startBasic("/raid/shotbygun/temp/log");
+        shotLogger.startBasic("/tmp/shotlog/testlog");
         
         long startTime, endTime;
         
@@ -41,43 +41,43 @@ public class Tester {
             // Wait logger to settle
             Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             trashSpeedTest(1);
             
             //Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             trashSpeedTest(1);
             
             //Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             trashSpeedTest(2);
             
             //Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             trashSpeedTest(3);
             
             //Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             trashSpeedTest(4);
             
             //Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             trashSpeedTest(5);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             
             //Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             
             Thread.sleep(1000);
             
-            shotLogger.printPoolSizes();
+            System.out.println(shotLogger.getSize());
             
             
             endTime = System.currentTimeMillis();
@@ -111,13 +111,20 @@ public class Tester {
         
         startTime = System.currentTimeMillis();
         
-        for(int i = 1 ; i < numThreads; i++) {
-            RandomShitGenerator rsg = new RandomShitGenerator("RSG-" + rsgCounter++, 100000, 10);
-            rsg.start();
-        }
+        RandomShitGenerator[] rsg = new RandomShitGenerator[numThreads];
         
-        RandomShitGenerator rsg = new RandomShitGenerator("RSG-main", 100000, 10);
-        rsg.run();
+        for(int i = 1 ; i < numThreads; i++) {
+            rsg[i] = new RandomShitGenerator("RSG-" + rsgCounter++, 100000);
+            rsg[i].start();
+        }
+        for(int i = 1 ; i < numThreads; i++) {
+            try {
+                rsg[i].thread.join();
+            } catch (Exception ex) {
+                System.err.println("error in trashSpeedTest");
+                ex.printStackTrace();
+            }
+        }
         
         endTime = System.currentTimeMillis();
         deltaTime = endTime - startTime;
@@ -137,7 +144,7 @@ public class Tester {
                 quit = true;
             } else {
                 Log.log("system.in", Log.INFO, Tester.class.getSimpleName(), input, null);
-                ShotLogger.getShotLogger().printPoolSizes();
+                ShotLogger.getShotLogger().getSize();
             }
 
         }

@@ -17,6 +17,7 @@ public class LogItem {
     public String source;
     public String message;
     public Exception exception;
+    public String threadName;
     
     /**
      * @see timestamp is taken when set() is called
@@ -26,13 +27,14 @@ public class LogItem {
      * @param message
      * @param exception OPTIONAL, you can use null
      */
-    public void set(String category, short severity, String source, String message, Exception exception) {
+    public void set(String category, short severity, String source, String message, Exception exception, String threadName) {
         this.timestamp = System.currentTimeMillis();
         this.category = category;
         this.severity = severity;
         this.source = source;
         this.message = message;
         this.exception = exception;
+        this.threadName = threadName;
     }
     
 }

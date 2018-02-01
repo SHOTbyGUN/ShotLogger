@@ -25,9 +25,9 @@ public class Log {
             reusable = new LogItem();
         }
         */
-        LogItem reusable = new LogItem();
-        reusable.set(category, severity, source, message, exception);
-        ShotLogger.currentLogItemQueue.put(reusable);
+        LogItem logItem = new LogItem();
+        logItem.set(category, severity, source, message, exception, Thread.currentThread().getName());
+        ShotLogger.put(logItem);
     }
     
     
@@ -65,7 +65,7 @@ public class Log {
         
         // Create logitem out of the normal flow
         LogItem logItem = new LogItem();
-        logItem.set(category, severity, source, message, exception);
+        logItem.set(category, severity, source, message, exception, Thread.currentThread().getName());
         
         // Generate string
         String errorLine = LogPrinter.stringBuilder(logItem, FAILSAFEDELIMITER, true, true, true);
@@ -73,13 +73,7 @@ public class Log {
         // Output the error
         System.err.println(errorLine);
         System.out.println(errorLine);
-        
-        // Send error string to FileLogWriter
-        failSafePlainText(errorLine);
     }
     
-    protected static void failSafePlainText(String failSafeErrorMessage) {
-        ShotLogger.getShotLogger().getFileLog().failSafe(failSafeErrorMessage);
-    }
     
 }

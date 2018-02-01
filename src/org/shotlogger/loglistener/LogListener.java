@@ -11,4 +11,5 @@ import org.shotlogger.LogItem;
 public interface LogListener {
     
     public abstract void consume(LogItem logitem);
+    public abstract void stop();
 }

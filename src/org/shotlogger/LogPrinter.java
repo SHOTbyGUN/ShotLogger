@@ -21,7 +21,7 @@ public class LogPrinter {
     public static String stringBuilder(LogItem logItem, String delimiter, boolean showTimestamp, boolean showCategory, boolean showStackTrace) {
         
         StringBuilder textOut = new StringBuilder();
-        
+         
         // Timestamp
         if (showTimestamp) {
             textOut.append(new Timestamp(logItem.timestamp));
